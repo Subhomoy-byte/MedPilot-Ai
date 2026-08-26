@@ -3,6 +3,8 @@ import { generateJsonFromGemini } from "@/lib/ai/generate-json";
 import { parseAndValidateMedPilotAnalysis } from "@/lib/ai/validate-analysis";
 import { mockAnalysisForUpload } from "@/lib/demo/mock-upload-analysis";
 import { isDemoMode } from "@/lib/env";
+import { enforceAnalysisSafety } from "@/lib/safety";
+import { translateAnalysis } from "@/lib/ai/translate";
 import { classifyConfidence, ocrNeedsReview } from "@/lib/ocr/confidence";
 import { hasUsableOcrText, normalizeOcrText } from "@/lib/ocr/normalize";
 import type { DocumentRecord } from "@/lib/storage/types";
@@ -60,11 +62,12 @@ export async function analyzeUploadedDocument(
       ocr,
     });
     const generated = await generateJsonFromGemini(prompt);
+    // OCR (stored) → Gemini → Zod → application safety → response
     const validated = parseAndValidateMedPilotAnalysis(generated.text);
     const medicinesUncertain = validated.medicines.some((item) => item.uncertain);
     const testsUncertain = validated.tests.some((item) => item.uncertain);
 
-    return medPilotAnalysisSchema.parse({
+    const overlaid = medPilotAnalysisSchema.parse({
       ...validated,
       documentId: record.documentId,
       expiresAt: record.expiresAt,
@@ -73,9 +76,10 @@ export async function analyzeUploadedDocument(
       ocr,
       needsReview: validated.needsReview || ocr.needsReview || medicinesUncertain || testsUncertain,
     });
+    return translateAnalysis(enforceAnalysisSafety(overlaid, { ocrText: normalizedOcrText }), language);
   } catch (error) {
     if (isDemoMode()) {
-      return mockAnalysisForUpload(record, language);
+      return translateAnalysis(mockAnalysisForUpload(record, language), language);
     }
     if (error instanceof GeminiUnavailableError || error instanceof GeminiInvalidResponseError) {
       throw error;

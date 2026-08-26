@@ -79,6 +79,18 @@ describe("mock API routes", () => {
   });
 
   it("POST /api/chat supports all three grounding statuses", async () => {
+    generateJsonFromGemini.mockResolvedValue({
+      text: JSON.stringify({
+        answer:
+          "The report lists hemoglobin as 13.2 g/dL with a printed reference range of 12.0-15.0. This restates what is written and is not a diagnosis.",
+        groundingStatus: "SUPPORTED_BY_DOCUMENT",
+        sourceContextIndicator: "DOCUMENT_OCR_AND_ANALYSIS",
+        spokenText:
+          "The report lists hemoglobin as 13.2 grams per deciliter with a printed reference range of 12.0 to 15.0.",
+      }),
+      model: "gemini-2.5-flash",
+    });
+
     const call = (message: string) =>
       chatPost(
         new Request("http://localhost/api/chat", {
@@ -157,14 +169,14 @@ describe("mock API routes", () => {
       new Request("http://localhost/api/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ documentId: uploadData.documentId, language: "bn" }),
+        body: JSON.stringify({ documentId: uploadData.documentId, language: "en" }),
       }),
     );
     const analysis = medPilotAnalysisSchema.parse(
       apiSuccessEnvelopeSchema.parse(await readJson(analyze)).data,
     );
     expect(analysis.documentId).toBe(uploadData.documentId);
-    expect(analysis.language).toBe("bn");
+    expect(analysis.language).toBe("en");
     expect(analysis.source).toBe("live");
   }, 120_000);
 

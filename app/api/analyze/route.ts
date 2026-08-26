@@ -2,7 +2,9 @@ import { apiError, apiSuccess } from "@/lib/api/respond";
 import { analyzeUploadedDocument, AnalyzeDocumentError } from "@/lib/ai/analyze-uploaded";
 import { GeminiUnavailableError } from "@/lib/ai/errors";
 import { GeminiInvalidResponseError } from "@/lib/ai/validate-analysis";
-import { getFixtureAnalysis } from "@/lib/demo/fixtures";
+import { getFixtureAnalysis, getFixtureOcr } from "@/lib/demo/fixtures";
+import { enforceAnalysisSafety } from "@/lib/safety";
+import { translateAnalysis } from "@/lib/ai/translate";
 import { resolveDocument } from "@/lib/documents/resolve";
 import { documentStore } from "@/lib/storage";
 import { analyzeRequestSchema, medPilotAnalysisSchema } from "@/lib/validation/schemas";
@@ -29,8 +31,16 @@ export async function POST(request: Request) {
   }
 
   if (resolved.kind === "fixture") {
-    const analysis = getFixtureAnalysis(resolved.documentId, parsed.data.language);
-    return apiSuccess(medPilotAnalysisSchema.parse(analysis));
+    const validated = medPilotAnalysisSchema.parse(
+      getFixtureAnalysis(resolved.documentId, parsed.data.language),
+    );
+    const analysis = await translateAnalysis(
+      enforceAnalysisSafety(validated, {
+        ocrText: getFixtureOcr(resolved.documentId).text,
+      }),
+      parsed.data.language,
+    );
+    return apiSuccess(analysis);
   }
 
   if (resolved.record.status !== "ocr_complete" && resolved.record.status !== "analysis_complete") {

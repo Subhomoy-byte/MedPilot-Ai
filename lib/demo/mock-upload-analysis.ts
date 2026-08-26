@@ -1,4 +1,5 @@
 import { getFixtureAnalysis } from "@/lib/demo/fixtures";
+import { enforceAnalysisSafety } from "@/lib/safety";
 import { classifyConfidence, ocrNeedsReview } from "@/lib/ocr/confidence";
 import { medPilotAnalysisSchema } from "@/lib/validation/schemas";
 import type { DocumentRecord } from "@/lib/storage/types";
@@ -29,5 +30,7 @@ export function mockAnalysisForUpload(
       "Live analysis is not enabled in this milestone. This is a deterministic mock explanation.",
     ],
   };
-  return medPilotAnalysisSchema.parse(payload);
+  return enforceAnalysisSafety(medPilotAnalysisSchema.parse(payload), {
+    ocrText: record.ocrText ?? undefined,
+  });
 }

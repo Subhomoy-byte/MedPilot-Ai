@@ -1,5 +1,8 @@
 import { apiError, apiSuccess } from "@/lib/api/respond";
-import { buildChatResponse, validateChatMessage } from "@/lib/demo/chat";
+import { handleDocumentChat, ChatDocumentError } from "@/lib/ai/chat-document";
+import { GeminiUnavailableError } from "@/lib/ai/errors";
+import { GeminiInvalidResponseError } from "@/lib/ai/validate-analysis";
+import { validateChatMessage } from "@/lib/demo/chat";
 import { resolveDocument } from "@/lib/documents/resolve";
 import { chatRequestSchema } from "@/lib/validation/schemas";
 
@@ -38,11 +41,23 @@ export async function POST(request: Request) {
     }
   }
 
-  const data = buildChatResponse({
-    documentId: parsed.data.documentId,
-    language: parsed.data.language,
-    message: messageCheck.trimmed,
-  });
-
-  return apiSuccess(data);
+  try {
+    const data = await handleDocumentChat({
+      resolved,
+      language: parsed.data.language,
+      message: messageCheck.trimmed,
+    });
+    return apiSuccess(data);
+  } catch (error) {
+    if (error instanceof ChatDocumentError) {
+      return apiError(error.code);
+    }
+    if (error instanceof GeminiInvalidResponseError) {
+      return apiError("AI_INVALID_RESPONSE");
+    }
+    if (error instanceof GeminiUnavailableError) {
+      return apiError("AI_UNAVAILABLE", undefined, error.retryable);
+    }
+    return apiError("AI_UNAVAILABLE");
+  }
 }
