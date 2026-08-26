@@ -1,4 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const generateJsonFromGemini = vi.fn();
+
+vi.mock("@/lib/ai/generate-json", () => ({
+  generateJsonFromGemini: (...args: unknown[]) => generateJsonFromGemini(...args),
+}));
+
 import { GET as healthGet } from "@/app/api/health/route";
 import { POST as uploadPost } from "@/app/api/upload/route";
 import { POST as ocrPost } from "@/app/api/ocr/route";
@@ -17,10 +24,13 @@ import {
 } from "@/lib/validation/schemas";
 import { fileFromBytes, jpegBytes, readJson } from "./helpers";
 import { clearPrescriptionPng } from "./ocr-samples";
+import { getFixtureAnalysis } from "@/lib/demo/fixtures";
+import { classifyConfidence, ocrNeedsReview } from "@/lib/ocr/confidence";
 
 describe("mock API routes", () => {
   afterEach(() => {
     resetDocumentStoreForTests();
+    generateJsonFromGemini.mockReset();
   });
 
   it("GET /api/health returns the frozen success envelope", async () => {
@@ -123,6 +133,26 @@ describe("mock API routes", () => {
     expect(typeof ocrData.text).toBe("string");
     expect(ocrData.text.length).toBeGreaterThan(0);
 
+    const template = getFixtureAnalysis("demo-prescription-001", "en");
+    const confidence = ocrData.confidence;
+    const confidenceLevel = classifyConfidence(confidence);
+    generateJsonFromGemini.mockResolvedValue({
+      text: JSON.stringify({
+        ...template,
+        documentId: uploadData.documentId,
+        language: "en",
+        source: "live",
+        expiresAt: uploadData.expiresAt,
+        ocr: {
+          confidence,
+          confidenceLevel,
+          needsReview: ocrNeedsReview(confidenceLevel),
+        },
+        needsReview: ocrNeedsReview(confidenceLevel) || template.needsReview,
+      }),
+      model: "gemini-2.5-flash",
+    });
+
     const analyze = await analyzePost(
       new Request("http://localhost/api/analyze", {
         method: "POST",
@@ -135,7 +165,7 @@ describe("mock API routes", () => {
     );
     expect(analysis.documentId).toBe(uploadData.documentId);
     expect(analysis.language).toBe("bn");
-    expect(analysis.source).toBe("demo_fixture");
+    expect(analysis.source).toBe("live");
   }, 120_000);
 
   it("analyze before OCR returns DOCUMENT_NOT_READY", async () => {

@@ -1,6 +1,8 @@
 import { apiError, apiSuccess } from "@/lib/api/respond";
+import { analyzeUploadedDocument, AnalyzeDocumentError } from "@/lib/ai/analyze-uploaded";
+import { GeminiUnavailableError } from "@/lib/ai/errors";
+import { GeminiInvalidResponseError } from "@/lib/ai/validate-analysis";
 import { getFixtureAnalysis } from "@/lib/demo/fixtures";
-import { mockAnalysisForUpload } from "@/lib/demo/mock-upload-analysis";
 import { resolveDocument } from "@/lib/documents/resolve";
 import { documentStore } from "@/lib/storage";
 import { analyzeRequestSchema, medPilotAnalysisSchema } from "@/lib/validation/schemas";
@@ -35,11 +37,27 @@ export async function POST(request: Request) {
     return apiError("DOCUMENT_NOT_READY");
   }
 
-  if (resolved.record.ocrText !== null && resolved.record.ocrText.trim().length === 0) {
-    return apiError("OCR_FAILED");
-  }
+  documentStore.update(resolved.record.documentId, { status: "analysis_processing" });
 
-  const analysis = mockAnalysisForUpload(resolved.record, parsed.data.language);
-  documentStore.update(resolved.record.documentId, { status: "analysis_complete" });
-  return apiSuccess(analysis);
+  try {
+    const analysis = await analyzeUploadedDocument(resolved.record, parsed.data.language);
+    documentStore.update(resolved.record.documentId, { status: "analysis_complete" });
+    return apiSuccess(analysis);
+  } catch (error) {
+    if (error instanceof AnalyzeDocumentError && error.code === "DOCUMENT_NOT_READY") {
+      documentStore.update(resolved.record.documentId, { status: resolved.record.status });
+      return apiError("DOCUMENT_NOT_READY");
+    }
+    documentStore.update(resolved.record.documentId, { status: "failed" });
+    if (error instanceof AnalyzeDocumentError) {
+      return apiError(error.code);
+    }
+    if (error instanceof GeminiInvalidResponseError) {
+      return apiError("AI_INVALID_RESPONSE");
+    }
+    if (error instanceof GeminiUnavailableError) {
+      return apiError("AI_UNAVAILABLE", undefined, error.retryable);
+    }
+    return apiError("AI_UNAVAILABLE");
+  }
 }
