@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "MedPilot AI",
+  title: "Medora AI",
   description: "Medical document understanding prototype API",
 };
 
