@@ -3,6 +3,7 @@ import { classifyConfidence, ocrNeedsReview } from "@/lib/ocr/confidence";
 import type { DemoFixtureId } from "@/lib/constants";
 import type { DocumentType, LanguageCode, MedPilotAnalysis, OcrResult } from "@/types";
 import { medPilotAnalysisSchema, ocrResultSchema } from "@/lib/validation/schemas";
+import { EMERGENCY_REDIRECT_MESSAGE } from "@/lib/safety/messages";
 
 const disclaimer = { text: DISCLAIMER_TEXT_EN };
 
@@ -106,6 +107,7 @@ const prescription = pack(
       },
     ],
     safetyNotes: [notDiagnosisNote, professionalReviewNote],
+    emergencyFlags: { flagged: false, triggerPhrases: [], note: EMERGENCY_REDIRECT_MESSAGE },
     warnings: ["Some information on this prescription could not be read clearly."],
     disclaimer,
   },
@@ -170,6 +172,7 @@ const lab = pack(
       },
     ],
     safetyNotes: [notDiagnosisNote, professionalReviewNote],
+    emergencyFlags: { flagged: false, triggerPhrases: [], note: EMERGENCY_REDIRECT_MESSAGE },
     warnings: ["Some laboratory lines could not be read clearly."],
     disclaimer,
   },
@@ -227,6 +230,7 @@ const discharge = pack(
       },
     ],
     safetyNotes: [notDiagnosisNote, professionalReviewNote],
+    emergencyFlags: { flagged: false, triggerPhrases: [], note: EMERGENCY_REDIRECT_MESSAGE },
     warnings: ["Low reading confidence. Unreadable details were not guessed."],
     disclaimer,
   },
@@ -236,6 +240,34 @@ const FIXTURES: Record<DemoFixtureId, FixturePack> = {
   "demo-prescription-001": prescription,
   "demo-lab-001": lab,
   "demo-discharge-001": discharge,
+  "demo-discharge-emergency-001": pack(
+    "discharge_summary",
+    [
+      "Discharge summary",
+      "The document records chest pain as written.",
+      "Urgent review is noted on the document.",
+    ].join("\n"),
+    0.92,
+    {
+      documentType: "discharge_summary",
+      summary:
+        "This discharge summary includes a written note mentioning chest pain. This restates the document and is not a diagnosis.",
+      spokenText:
+        "This discharge summary includes a written note mentioning chest pain. Seek urgent professional or emergency healthcare support if this is an emergency.",
+      medicines: [],
+      tests: [],
+      interactionAlerts: [],
+      uncertainties: [],
+      safetyNotes: [notDiagnosisNote, professionalReviewNote],
+      emergencyFlags: {
+        flagged: true,
+        triggerPhrases: ["Emergency-related document language: chest pain."],
+        note: EMERGENCY_REDIRECT_MESSAGE,
+      },
+      warnings: [],
+      disclaimer,
+    },
+  ),
 };
 
 export function getFixtureOcr(documentId: DemoFixtureId): OcrResult {
@@ -283,6 +315,8 @@ export function getFixtureKeywords(documentId: DemoFixtureId): string[] {
       return ["hemoglobin", "lab", "report", "g/dl", "reference"];
     case "demo-discharge-001":
       return ["warfarin", "ibuprofen", "discharge", "summary"];
+    case "demo-discharge-emergency-001":
+      return ["chest pain", "discharge", "summary", "urgent"];
     default:
       return [];
   }

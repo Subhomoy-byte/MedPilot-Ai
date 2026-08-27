@@ -18,6 +18,7 @@ export const DEMO_FIXTURE_IDS = [
   "demo-prescription-001",
   "demo-lab-001",
   "demo-discharge-001",
+  "demo-discharge-emergency-001",
 ] as const;
 
 export type DemoFixtureId = (typeof DEMO_FIXTURE_IDS)[number];

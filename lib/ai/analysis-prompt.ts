@@ -1,5 +1,6 @@
 import type { ConfidenceLevel, DocumentType } from "@/types";
 import { DISCLAIMER_TEXT_EN, INTERACTION_AWARENESS_TEXT_EN } from "@/lib/constants";
+import { EMERGENCY_REDIRECT_MESSAGE } from "@/lib/safety/messages";
 
 export type DocumentAnalysisPromptInput = {
   documentId: string;
@@ -87,6 +88,8 @@ export function buildDocumentAnalysisPrompt(input: DocumentAnalysisPromptInput):
     "Otherwise interactionAlerts must be [].",
     "",
     "REQUIRED top-level arrays (use [] if none): medicines, tests, interactionAlerts, uncertainties, safetyNotes, warnings.",
+    "emergencyFlags is required and must be exactly: flagged false, triggerPhrases [], and the note below. The application independently checks emergency signals after validation.",
+    `emergencyFlags.note must be exactly: ${JSON.stringify(EMERGENCY_REDIRECT_MESSAGE)}`,
     "safetyNotes must include that this is not a diagnosis and that a healthcare professional should review clinical decisions.",
     `disclaimer.text must be exactly: ${JSON.stringify(DISCLAIMER_TEXT_EN)}`,
     "summary and spokenText: short patient-friendly English grounded in the OCR; mention if some items need review; do not read like a diagnosis or a new prescription.",

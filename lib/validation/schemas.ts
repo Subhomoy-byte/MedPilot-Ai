@@ -144,6 +144,11 @@ export const medPilotAnalysisSchema = z.object({
   interactionAlerts: z.array(interactionAlertSchema),
   uncertainties: z.array(uncertaintySchema),
   safetyNotes: z.array(safetyNoteSchema),
+  emergencyFlags: z.object({
+    flagged: z.boolean(),
+    triggerPhrases: z.array(z.string()),
+    note: z.string().min(1),
+  }),
   warnings: z.array(z.string()),
   disclaimer: disclaimerSchema,
   ocr: ocrConfidenceSchema,

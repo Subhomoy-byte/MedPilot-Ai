@@ -22,6 +22,11 @@ export const DOSAGE_MODIFICATION_RE =
 export const EMERGENCY_RE =
   /\b(chest pain|can't breathe|cannot breathe|cannot catch my breath|suicid|anaphylaxis|severe bleeding|heart attack|stroke symptoms|choking)\b/i;
 
+/** Returns the exact emergency wording found in document or model text. */
+export function findEmergencyTriggerPhrases(text: string): string[] {
+  return [...new Set(text.match(new RegExp(EMERGENCY_RE.source, "gi")) ?? [])];
+}
+
 export const PROMPT_INJECTION_RE =
   /\b(ignore (all |previous |the )?(instructions|rules|safety)|you are (now )?(a )?doctor|act as (a )?physician|override safety|reveal (the )?(system |hidden )?prompt)\b/i;
 

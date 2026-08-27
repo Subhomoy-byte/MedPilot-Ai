@@ -181,6 +181,20 @@ describe("POST /api/analyze safety enforcement", () => {
     expect(analysis.uncertainties.some((item) => item.code === "LOW_OCR")).toBe(true);
   });
 
+  it("surfaces emergency flags for emergency language in the uploaded document", async () => {
+    const record = seedOcrDocument({ ocrText: "Discharge note: chest pain reported as written." });
+    const payload = safeAnalysis(record);
+    generateJsonFromGemini.mockResolvedValue({
+      text: JSON.stringify(payload),
+      model: "gemini-2.5-flash",
+    });
+
+    const analysis = await analyze(record.documentId);
+    expect(analysis.emergencyFlags.flagged).toBe(true);
+    expect(analysis.emergencyFlags.triggerPhrases.join(" ")).toMatch(/chest pain/i);
+    expect(analysis.safetyNotes.some((note) => note.code === "EMERGENCY_REDIRECT")).toBe(true);
+  });
+
   it("leaves a safe analysis unchanged", async () => {
     const record = seedOcrDocument();
     const payload = safeAnalysis(record);
@@ -197,6 +211,7 @@ describe("POST /api/analyze safety enforcement", () => {
     expect(analysis.medicines[0]?.instructionsAsWritten).toBe("Take one tablet twice daily with meals");
     expect(analysis.interactionAlerts).toEqual([]);
     expect(analysis.disclaimer.text).toBe(DISCLAIMER_TEXT_EN);
+    expect(analysis.emergencyFlags.flagged).toBe(false);
     expect(analysis.ocr.needsReview).toBe(false);
     expect(analysis.needsReview).toBe(false);
     expect(analysis.safetyNotes.some((note) => note.code === "NOT_A_DIAGNOSIS")).toBe(true);
@@ -212,5 +227,13 @@ describe("POST /api/analyze safety enforcement", () => {
     expect(analysis.medicines.some((item) => item.medicineNameAsExtracted === null && item.uncertain)).toBe(
       true,
     );
+    expect(analysis.emergencyFlags.flagged).toBe(false);
+  });
+
+  it("returns a persistent emergency signal for the emergency demo fixture", async () => {
+    const analysis = await analyze("demo-discharge-emergency-001");
+    expect(analysis.source).toBe("demo_fixture");
+    expect(analysis.emergencyFlags.flagged).toBe(true);
+    expect(analysis.emergencyFlags.triggerPhrases.join(" ")).toMatch(/chest pain/i);
   });
 });

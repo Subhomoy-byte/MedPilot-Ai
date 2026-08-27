@@ -5,7 +5,12 @@ export function collectAnalysisStrings(analysis: MedPilotAnalysis): Record<strin
     summary: analysis.summary,
     spokenText: analysis.spokenText,
     "disclaimer.text": analysis.disclaimer.text,
+    "emergencyFlags.note": analysis.emergencyFlags.note,
   };
+
+  analysis.emergencyFlags.triggerPhrases.forEach((value, index) => {
+    strings[`emergencyFlags.triggerPhrases[${index}]`] = value;
+  });
 
   analysis.warnings.forEach((value, index) => {
     strings[`warnings[${index}]`] = value;
@@ -76,6 +81,13 @@ export function applyAnalysisTranslations(
     summary: translations.summary,
     spokenText: translations.spokenText,
     disclaimer: { text: translations["disclaimer.text"] },
+    emergencyFlags: {
+      ...analysis.emergencyFlags,
+      note: translations["emergencyFlags.note"],
+      triggerPhrases: analysis.emergencyFlags.triggerPhrases.map(
+        (_, index) => translations[`emergencyFlags.triggerPhrases[${index}]`],
+      ),
+    },
     warnings: analysis.warnings.map((_, index) => translations[`warnings[${index}]`]),
     uncertainties: analysis.uncertainties.map((item, index) => ({
       ...item,

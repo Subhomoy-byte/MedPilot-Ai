@@ -13,10 +13,16 @@ describe("demo fixtures", () => {
     expect(getFixtureOcr("demo-prescription-001").documentId).toBe("demo-prescription-001");
     expect(getFixtureOcr("demo-lab-001").documentId).toBe("demo-lab-001");
     expect(getFixtureOcr("demo-discharge-001").documentId).toBe("demo-discharge-001");
+    expect(getFixtureOcr("demo-discharge-emergency-001").documentId).toBe("demo-discharge-emergency-001");
   });
 
   it("proves demo analysis passes the same runtime schema as live analysis", () => {
-    for (const id of ["demo-prescription-001", "demo-lab-001", "demo-discharge-001"] as const) {
+    for (const id of [
+      "demo-prescription-001",
+      "demo-lab-001",
+      "demo-discharge-001",
+      "demo-discharge-emergency-001",
+    ] as const) {
       const analysis = getFixtureAnalysis(id, "en");
       expect(medPilotAnalysisSchema.parse(analysis).source).toBe("demo_fixture");
       expect(ocrResultSchema.parse(getFixtureOcr(id)).source).toBe("demo_fixture");

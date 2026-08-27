@@ -169,6 +169,18 @@ describe("multilingual translation", () => {
     expect(translated.medicines[0]?.uncertain).toBe(source.medicines[0]?.uncertain);
   });
 
+  it("translates emergency-banner wording without changing its flagged state", async () => {
+    const source = getFixtureAnalysis("demo-discharge-emergency-001", "en");
+    generateJsonFromGemini.mockResolvedValue({
+      text: JSON.stringify({ translations: hindiMap(collectAnalysisStrings(source)) }),
+      model: "gemini-2.5-flash",
+    });
+    const translated = await translateAnalysis(source, "hi");
+    expect(translated.emergencyFlags.flagged).toBe(true);
+    expect(translated.emergencyFlags.note.startsWith("HI:")).toBe(true);
+    expect(translated.emergencyFlags.triggerPhrases[0]?.startsWith("HI:")).toBe(true);
+  });
+
   it("translates chat user-facing strings after safety", async () => {
     const chat = chatResponseSchema.parse({
       documentId: "demo-lab-001",

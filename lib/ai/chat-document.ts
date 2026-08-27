@@ -18,7 +18,12 @@ import {
 import { evaluateTextSafety } from "@/lib/safety/evaluate-text";
 import { chatResponseSchema, medPilotAnalysisSchema } from "@/lib/validation/schemas";
 import type { ResolvedDocument } from "@/lib/documents/resolve";
-import { CANONICAL_DISCLAIMER_TEXT, noteNotDiagnosis, noteProfessionalReview } from "@/lib/safety/messages";
+import {
+  CANONICAL_DISCLAIMER_TEXT,
+  EMERGENCY_REDIRECT_MESSAGE,
+  noteNotDiagnosis,
+  noteProfessionalReview,
+} from "@/lib/safety/messages";
 import { classifyConfidence, ocrNeedsReview } from "@/lib/ocr/confidence";
 import type { DocumentRecord } from "@/lib/storage/types";
 import type { ChatResponse, ErrorCode, LanguageCode, MedPilotAnalysis } from "@/types";
@@ -99,6 +104,11 @@ function analysisFromStoredRecord(record: DocumentRecord, language: LanguageCode
     interactionAlerts: [],
     uncertainties: [],
     safetyNotes: [noteNotDiagnosis(), noteProfessionalReview()],
+    emergencyFlags: {
+      flagged: false,
+      triggerPhrases: [],
+      note: EMERGENCY_REDIRECT_MESSAGE,
+    },
     warnings: [],
     disclaimer: { text: CANONICAL_DISCLAIMER_TEXT },
     ocr: { confidence, confidenceLevel, needsReview },

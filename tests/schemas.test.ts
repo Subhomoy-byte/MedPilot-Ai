@@ -25,6 +25,13 @@ describe("runtime schemas", () => {
     expect(result.success).toBe(false);
   });
 
+  it("requires emergency flags on analysis", () => {
+    const valid = getFixtureAnalysis("demo-prescription-001", "en");
+    const { emergencyFlags: _dropped, ...rest } = valid;
+    void _dropped;
+    expect(medPilotAnalysisSchema.safeParse(rest).success).toBe(false);
+  });
+
   it("validates ChatResponse required fields", () => {
     const parsed = chatResponseSchema.parse({
       documentId: "demo-prescription-001",

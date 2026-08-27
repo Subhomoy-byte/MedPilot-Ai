@@ -2,6 +2,7 @@ import { classifyConfidence, ocrNeedsReview } from "@/lib/ocr/confidence";
 import { evaluateTextSafety } from "@/lib/safety/evaluate-text";
 import {
   CANONICAL_DISCLAIMER_TEXT,
+  EMERGENCY_REDIRECT_MESSAGE,
   INTERACTION_AWARENESS_TEXT,
   LOW_OCR_MESSAGE,
   MISSING_INSTRUCTIONS_MESSAGE,
@@ -18,11 +19,13 @@ import {
   DIAGNOSIS_RE,
   DOSAGE_MODIFICATION_RE,
   EMERGENCY_RE,
+  findEmergencyTriggerPhrases,
   isBoundarySentence,
   MEDICATION_START_RE,
   MEDICATION_STOP_RE,
   PLACEHOLDER_NAME_RE,
 } from "@/lib/safety/patterns";
+import { checkPanicLabValues } from "@/lib/safety/panic-values";
 import type { AnalysisSafetyResult, SafetyCategory, SafetyDecision, SafetyFinding } from "@/lib/safety/types";
 import { medPilotAnalysisSchema } from "@/lib/validation/schemas";
 import type {
@@ -400,6 +403,16 @@ export function applyAnalysisSafety(
   );
   const interactionAlerts = sanitizeInteractions(analysis.interactionAlerts, context.ocrText, findings);
 
+  for (const panicFinding of checkPanicLabValues(tests)) {
+    addFinding(
+      findings,
+      panicFinding.category,
+      panicFinding.code,
+      panicFinding.message,
+      panicFinding.severity,
+    );
+  }
+
   const summary = sanitizeNarrative(analysis.summary);
   const spoken = sanitizeNarrative(analysis.spokenText);
   mergeTextFindings(
@@ -433,8 +446,17 @@ export function applyAnalysisSafety(
     }
   }
 
-  if (EMERGENCY_RE.test(`${analysis.summary} ${analysis.spokenText}`)) {
-    extraNotes.push(noteEmergencyRedirect());
+  const emergencyTriggers = findEmergencyTriggerPhrases(
+    `${analysis.summary}\n${analysis.spokenText}\n${context.ocrText ?? ""}`,
+  );
+  if (emergencyTriggers.length > 0) {
+    addFinding(
+      findings,
+      "emergency_language",
+      "EMERGENCY_REDIRECT",
+      `Emergency-related document language: ${emergencyTriggers.join(", ")}.`,
+      "warning",
+    );
   }
 
   const ocrConfidenceLevel = classifyConfidence(analysis.ocr.confidence);
@@ -452,6 +474,13 @@ export function applyAnalysisSafety(
   }
 
   const decision = decisionFromFindings(findings, extraNotes);
+  const emergencyFindings = decision.findings.filter((item) => item.category === "emergency_language");
+  const emergencyTriggerPhrases = [
+    ...emergencyTriggers.map((phrase) => `Emergency-related document language: ${phrase}.`),
+    ...emergencyFindings
+      .filter((item) => item.code === "PANIC_LAB_VALUE")
+      .map((item) => item.message),
+  ];
   const sanitized = medPilotAnalysisSchema.parse({
     ...analysis,
     summary: summary.text,
@@ -461,6 +490,11 @@ export function applyAnalysisSafety(
     interactionAlerts,
     uncertainties: uniqueUncertainties(extraUncertainties),
     safetyNotes: decision.safetyNotes,
+    emergencyFlags: {
+      flagged: decision.safetyStatus === "emergency_redirect",
+      triggerPhrases: [...new Set(emergencyTriggerPhrases)],
+      note: EMERGENCY_REDIRECT_MESSAGE,
+    },
     warnings,
     disclaimer: { text: CANONICAL_DISCLAIMER_TEXT },
     ocr: {
