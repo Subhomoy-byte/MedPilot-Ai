@@ -7,7 +7,10 @@ import { ocrRequestSchema, ocrResultSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// Hobby plan's default cap is 60s, but Fluid Compute (already active on this
+// project, per its earlier 300s timeout logs) allows up to 300s. Give OCR
+// enough headroom for a cold Tesseract worker + language-data fetch.
+export const maxDuration = 120;
 
 export async function POST(request: Request) {
   let json: unknown;
