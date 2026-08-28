@@ -9,6 +9,11 @@ async function getWorker(): Promise<Worker> {
     workerPromise = (async () => {
       const worker = await createWorker("eng", 1, {
         logger: () => undefined,
+        // Vercel's serverless filesystem is read-only except /tmp.
+        // Without this, tesseract.js tries to cache the downloaded
+        // language data to a non-writable path, fails silently, and
+        // retries until the function times out.
+        cachePath: "/tmp",
       });
       await worker.setParameters({
         user_defined_dpi: "300",
