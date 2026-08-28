@@ -1,4 +1,4 @@
-import { apiError, apiSuccess } from "@/lib/api/respond";
+import { apiError, apiSuccess, corsPreflight } from "@/lib/api/respond";
 import { handleDocumentChat, ChatDocumentError } from "@/lib/ai/chat-document";
 import { GeminiUnavailableError } from "@/lib/ai/errors";
 import { GeminiInvalidResponseError } from "@/lib/ai/validate-analysis";
@@ -60,4 +60,9 @@ export async function POST(request: Request) {
     }
     return apiError("AI_UNAVAILABLE");
   }
+}
+
+
+export async function OPTIONS() {
+  return corsPreflight();
 }

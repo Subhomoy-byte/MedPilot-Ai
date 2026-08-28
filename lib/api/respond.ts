@@ -81,8 +81,20 @@ export function errorEnvelope(
   };
 }
 
+export function corsHeaders(): Record<string, string> {
+  const origin = process.env.FRONTEND_ORIGIN?.trim();
+  if (!origin) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true",
+    Vary: "Origin",
+  };
+}
+
 export function apiSuccess<T>(data: T, status = 200): NextResponse {
-  return NextResponse.json(successEnvelope(data), { status });
+  return NextResponse.json(successEnvelope(data), { status, headers: corsHeaders() });
 }
 
 export function apiError(
@@ -92,5 +104,10 @@ export function apiError(
 ): NextResponse {
   return NextResponse.json(errorEnvelope(code, message, retryable), {
     status: HTTP_STATUS[code],
+    headers: corsHeaders(),
   });
+}
+
+export function corsPreflight(): NextResponse {
+  return new NextResponse(null, { status: 204, headers: corsHeaders() });
 }

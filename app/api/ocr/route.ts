@@ -1,4 +1,4 @@
-import { apiError, apiSuccess } from "@/lib/api/respond";
+import { apiError, apiSuccess, corsPreflight } from "@/lib/api/respond";
 import { getFixtureOcr } from "@/lib/demo/fixtures";
 import { resolveDocument } from "@/lib/documents/resolve";
 import { extractText } from "@/lib/ocr/extract";
@@ -64,4 +64,9 @@ export async function POST(request: Request) {
   });
 
   return apiSuccess(data);
+}
+
+
+export async function OPTIONS() {
+  return corsPreflight();
 }

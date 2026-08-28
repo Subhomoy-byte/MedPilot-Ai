@@ -1,5 +1,5 @@
 import { isDemoMode, isGeminiConfigured } from "@/lib/env";
-import { apiSuccess } from "@/lib/api/respond";
+import { apiSuccess, corsPreflight } from "@/lib/api/respond";
 import { healthDataSchema } from "@/lib/validation/schemas";
 
 export const runtime = "nodejs";
@@ -12,4 +12,9 @@ export async function GET() {
     geminiConfigured: isGeminiConfigured(),
   });
   return apiSuccess(data);
+}
+
+
+export async function OPTIONS() {
+  return corsPreflight();
 }

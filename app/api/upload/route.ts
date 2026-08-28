@@ -1,4 +1,4 @@
-import { apiError, apiSuccess } from "@/lib/api/respond";
+import { apiError, apiSuccess, corsPreflight } from "@/lib/api/respond";
 import { documentStore } from "@/lib/storage";
 import { validateUpload } from "@/lib/upload/validate";
 import { uploadResultSchema } from "@/lib/validation/schemas";
@@ -50,4 +50,9 @@ export async function POST(request: Request) {
   });
 
   return apiSuccess(data);
+}
+
+
+export async function OPTIONS() {
+  return corsPreflight();
 }
