@@ -32,6 +32,7 @@ function seedOcrDocument(overrides: Partial<DocumentRecord> = {}): DocumentRecor
     bytes: jpegBytes(),
     ocrText: overrides.ocrText === undefined ? OCR_TEXT : overrides.ocrText,
     ocrConfidence: confidence,
+    lastAnalysis: null,
     ...overrides,
   };
   seedDocumentForTests(record);

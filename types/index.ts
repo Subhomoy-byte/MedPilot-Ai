@@ -24,6 +24,9 @@ import type {
   ocrConfidenceSchema,
   ocrRequestSchema,
   ocrResultSchema,
+  orderItemResultSchema,
+  orderRequestSchema,
+  orderResultSchema,
   safetyNoteSchema,
   safetyStatusSchema,
   sourceContextIndicatorSchema,
@@ -60,6 +63,9 @@ export type ChatResponse = z.infer<typeof chatResponseSchema>;
 export type HealthData = z.infer<typeof healthDataSchema>;
 export type OcrRequest = z.infer<typeof ocrRequestSchema>;
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
+export type OrderRequest = z.infer<typeof orderRequestSchema>;
+export type OrderItemResult = z.infer<typeof orderItemResultSchema>;
+export type OrderResult = z.infer<typeof orderResultSchema>;
 export type ApiErrorBody = z.infer<typeof apiErrorBodySchema>;
 export type ApiSuccessEnvelope<T> = {
   success: true;

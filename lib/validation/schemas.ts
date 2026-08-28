@@ -42,6 +42,7 @@ export const errorCodeSchema = z.enum([
   "TOO_MANY_PAGES",
   "OCR_FAILED",
   "OCR_LOW_CONFIDENCE",
+  "MEDICINE_NOT_ORDERABLE",
   "DOCUMENT_NOT_READY",
   "DOCUMENT_NOT_FOUND",
   "DOCUMENT_EXPIRED",
@@ -210,4 +211,29 @@ export const ocrRequestSchema = z.object({
 export const analyzeRequestSchema = z.object({
   documentId: z.string().min(1),
   language: languageCodeSchema,
+});
+
+export const orderRequestSchema = z.object({
+  documentId: z.string().min(1),
+  items: z.array(z.object({
+    medicineIndex: z.number().int().nonnegative(),
+    quantity: z.number().int().min(1).max(10),
+  })).min(1),
+});
+
+export const orderItemResultSchema = z.object({
+  medicineNameAsExtracted: z.string(),
+  strengthAsWritten: z.string().nullable(),
+  instructionsAsWritten: z.string().nullable(),
+  quantity: z.number(),
+});
+
+export const orderResultSchema = z.object({
+  orderId: z.string().min(1),
+  documentId: z.string().min(1),
+  items: z.array(orderItemResultSchema),
+  placedAt: z.string().datetime(),
+  mock: z.literal(true),
+  disclaimer: disclaimerSchema,
+  note: z.string().min(1),
 });

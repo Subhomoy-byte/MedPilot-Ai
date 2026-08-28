@@ -42,6 +42,7 @@ describe("document lifecycle", () => {
       bytes: new Uint8Array([0xff, 0xd8, 0xff]),
       ocrText: null,
       ocrConfidence: null,
+      lastAnalysis: null,
     });
     expect(resolveDocument("expired-1")).toEqual({ error: "DOCUMENT_EXPIRED" });
     expect(documentStore.get("expired-1")).toBeNull();

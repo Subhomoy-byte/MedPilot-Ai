@@ -1,4 +1,4 @@
-import type { DocumentSource, DocumentStatus } from "@/types";
+import type { DocumentSource, DocumentStatus, MedPilotAnalysis } from "@/types";
 
 export type DocumentRecord = {
   documentId: string;
@@ -17,6 +17,8 @@ export type DocumentRecord = {
    */
   ocrText: string | null;
   ocrConfidence: number | null;
+  /** Last validated analysis for server-side follow-on actions. Never log this field. */
+  lastAnalysis: MedPilotAnalysis | null;
 };
 
 export type CreateDocumentInput = {

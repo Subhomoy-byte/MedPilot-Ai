@@ -29,6 +29,7 @@ export class InMemoryDocumentStore implements DocumentStore {
       bytes,
       ocrText: null,
       ocrConfidence: null,
+      lastAnalysis: null,
     };
     records.set(record.documentId, record);
     return record;

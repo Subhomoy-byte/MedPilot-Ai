@@ -59,6 +59,7 @@ function seedOcrDocument(overrides: Partial<DocumentRecord> = {}): DocumentRecor
     ocrText: overrides.ocrText ?? "Metformin 500 mg",
     ocrConfidence: overrides.ocrConfidence ?? 0.91,
     ...overrides,
+    lastAnalysis: overrides.lastAnalysis ?? null,
   };
   seedDocumentForTests(record);
   return record;

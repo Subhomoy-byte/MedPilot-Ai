@@ -123,6 +123,7 @@ describe("document storage and upload flow", () => {
       bytes: jpegBytes(),
       ocrText: null,
       ocrConfidence: null,
+      lastAnalysis: null,
     });
     expect(resolveDocument("expired-upload")).toEqual({ error: "DOCUMENT_EXPIRED" });
     expect(documentStore.get("expired-upload")).toBeNull();

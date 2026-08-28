@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   try {
     const analysis = await analyzeUploadedDocument(resolved.record, parsed.data.language);
-    documentStore.update(resolved.record.documentId, { status: "analysis_complete" });
+    documentStore.update(resolved.record.documentId, { status: "analysis_complete", lastAnalysis: analysis });
     return apiSuccess(analysis);
   } catch (error) {
     if (error instanceof AnalyzeDocumentError && error.code === "DOCUMENT_NOT_READY") {
