@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_FAILED", "documentId and language (en, hi, or bn) are required.");
   }
 
-  const resolved = resolveDocument(parsed.data.documentId);
+  const resolved = await resolveDocument(parsed.data.documentId);
   if ("error" in resolved) {
     return apiError(resolved.error);
   }
@@ -47,18 +47,18 @@ export async function POST(request: Request) {
     return apiError("DOCUMENT_NOT_READY");
   }
 
-  documentStore.update(resolved.record.documentId, { status: "analysis_processing" });
+  await documentStore.update(resolved.record.documentId, { status: "analysis_processing" });
 
   try {
     const analysis = await analyzeUploadedDocument(resolved.record, parsed.data.language);
-    documentStore.update(resolved.record.documentId, { status: "analysis_complete", lastAnalysis: analysis });
+    await documentStore.update(resolved.record.documentId, { status: "analysis_complete", lastAnalysis: analysis });
     return apiSuccess(analysis);
   } catch (error) {
     if (error instanceof AnalyzeDocumentError && error.code === "DOCUMENT_NOT_READY") {
-      documentStore.update(resolved.record.documentId, { status: resolved.record.status });
+      await documentStore.update(resolved.record.documentId, { status: resolved.record.status });
       return apiError("DOCUMENT_NOT_READY");
     }
-    documentStore.update(resolved.record.documentId, { status: "failed" });
+    await documentStore.update(resolved.record.documentId, { status: "failed" });
     if (error instanceof AnalyzeDocumentError) {
       return apiError(error.code);
     }

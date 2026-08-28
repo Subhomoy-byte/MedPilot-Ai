@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_FAILED", "documentId is required.");
   }
 
-  const resolved = resolveDocument(parsed.data.documentId);
+  const resolved = await resolveDocument(parsed.data.documentId);
   if ("error" in resolved) {
     return apiError(resolved.error);
   }
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return apiSuccess(getFixtureOcr(resolved.documentId));
   }
 
-  documentStore.update(resolved.record.documentId, { status: "ocr_processing" });
+  await documentStore.update(resolved.record.documentId, { status: "ocr_processing" });
 
   const extraction = await extractText({
     bytes: resolved.record.bytes,
@@ -39,11 +39,11 @@ export async function POST(request: Request) {
   });
 
   if (!extraction.ok) {
-    documentStore.update(resolved.record.documentId, { status: "failed" });
+    await documentStore.update(resolved.record.documentId, { status: "failed" });
     return apiError("OCR_FAILED");
   }
 
-  const updated = documentStore.update(resolved.record.documentId, {
+  const updated = await documentStore.update(resolved.record.documentId, {
     status: "ocr_complete",
     ocrText: extraction.extractedText,
     ocrConfidence: extraction.confidence,

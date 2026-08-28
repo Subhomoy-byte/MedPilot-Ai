@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_FAILED", "documentId and at least one valid medicine item are required.");
   }
 
-  const resolved = resolveDocument(parsed.data.documentId);
+  const resolved = await resolveDocument(parsed.data.documentId);
   if ("error" in resolved) {
     return apiError(resolved.error);
   }

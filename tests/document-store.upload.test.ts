@@ -34,29 +34,29 @@ describe("document storage and upload flow", () => {
     expect(data.sizeBytes).toBe(original.length);
     expect(raw.data).not.toHaveProperty("bytes");
 
-    const stored = documentStore.get(data.documentId);
+    const stored = await documentStore.get(data.documentId);
     expect(stored).not.toBeNull();
     expect(stored?.status).toBe("uploaded");
     expect(stored?.bytes).toEqual(original);
     expect(stored?.filename).toBe("scan.jpg");
 
-    const resolved = resolveDocument(data.documentId);
+    const resolved = await resolveDocument(data.documentId);
     expect(resolved).toMatchObject({ kind: "stored" });
     if ("kind" in resolved && resolved.kind === "stored") {
       expect(resolved.record.bytes).toEqual(original);
     }
   });
 
-  it("retrieves PNG bytes after create", () => {
+  it("retrieves PNG bytes after create", async () => {
     const bytes = pngBytes();
-    const created = documentStore.create({
+    const created = await documentStore.create({
       filename: "lab.png",
       mimeType: "image/png",
       sizeBytes: bytes.length,
       pageCount: null,
       bytes,
     });
-    const stored = documentStore.get(created.documentId);
+    const stored = await documentStore.get(created.documentId);
     expect(stored?.bytes).toEqual(bytes);
     expect(stored?.mimeType).toBe("image/png");
   });
@@ -72,7 +72,7 @@ describe("document storage and upload flow", () => {
     );
     const body = apiErrorEnvelopeSchema.parse(await readJson(response));
     expect(body.error.code).toBe("UNSUPPORTED_FILE");
-    expect(documentStore.get("unused")).toBeNull();
+    expect(await documentStore.get("unused")).toBeNull();
   });
 
   it("rejects invalid extension even when bytes look like JPEG", async () => {
@@ -109,7 +109,7 @@ describe("document storage and upload flow", () => {
     expect(body.error.code).toBe("INVALID_FILE");
   });
 
-  it("returns DOCUMENT_EXPIRED for an expired stored document", () => {
+  it("returns DOCUMENT_EXPIRED for an expired stored document", async () => {
     seedDocumentForTests({
       documentId: "expired-upload",
       status: "uploaded",
@@ -125,18 +125,18 @@ describe("document storage and upload flow", () => {
       ocrConfidence: null,
       lastAnalysis: null,
     });
-    expect(resolveDocument("expired-upload")).toEqual({ error: "DOCUMENT_EXPIRED" });
-    expect(documentStore.get("expired-upload")).toBeNull();
+    expect(await resolveDocument("expired-upload")).toEqual({ error: "DOCUMENT_EXPIRED" });
+    expect(await documentStore.get("expired-upload")).toBeNull();
   });
 
-  it("returns DOCUMENT_NOT_FOUND for a missing document", () => {
-    expect(resolveDocument("does-not-exist")).toEqual({ error: "DOCUMENT_NOT_FOUND" });
-    expect(documentStore.get("does-not-exist")).toBeNull();
+  it("returns DOCUMENT_NOT_FOUND for a missing document", async () => {
+    expect(await resolveDocument("does-not-exist")).toEqual({ error: "DOCUMENT_NOT_FOUND" });
+    expect(await documentStore.get("does-not-exist")).toBeNull();
   });
 
-  it("does not put demo fixtures in DocumentStore", () => {
-    expect(documentStore.get("demo-prescription-001")).toBeNull();
-    expect(resolveDocument("demo-prescription-001")).toEqual({
+  it("does not put demo fixtures in DocumentStore", async () => {
+    expect(await documentStore.get("demo-prescription-001")).toBeNull();
+    expect(await resolveDocument("demo-prescription-001")).toEqual({
       kind: "fixture",
       documentId: "demo-prescription-001",
     });

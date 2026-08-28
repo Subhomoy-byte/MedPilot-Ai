@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_FAILED", "message must not be empty.");
   }
 
-  const resolved = resolveDocument(parsed.data.documentId);
+  const resolved = await resolveDocument(parsed.data.documentId);
   if ("error" in resolved) {
     return apiError(resolved.error);
   }

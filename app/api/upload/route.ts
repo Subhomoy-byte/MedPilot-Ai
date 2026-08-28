@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     return apiError(validation.code, validation.message);
   }
 
-  const record = documentStore.create({
+  const record = await documentStore.create({
     filename: file.name,
     mimeType: validation.mimeType,
     sizeBytes: bytes.length,

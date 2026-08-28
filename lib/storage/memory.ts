@@ -12,8 +12,13 @@ function copyBytes(bytes: Uint8Array): Uint8Array {
   return Uint8Array.from(bytes);
 }
 
+/**
+ * Process-local fallback store, used only when Vercel KV is not configured
+ * (e.g. local development). Not durable across serverless instances —
+ * see lib/storage/redis.ts for the production-safe store.
+ */
 export class InMemoryDocumentStore implements DocumentStore {
-  create(input: CreateDocumentInput): DocumentRecord {
+  async create(input: CreateDocumentInput): Promise<DocumentRecord> {
     const createdAt = new Date();
     const bytes = copyBytes(input.bytes);
     const record: DocumentRecord = {
@@ -35,11 +40,11 @@ export class InMemoryDocumentStore implements DocumentStore {
     return record;
   }
 
-  get(documentId: string): DocumentRecord | null {
+  async get(documentId: string): Promise<DocumentRecord | null> {
     return records.get(documentId) ?? null;
   }
 
-  update(documentId: string, patch: Partial<DocumentRecord>): DocumentRecord | null {
+  async update(documentId: string, patch: Partial<DocumentRecord>): Promise<DocumentRecord | null> {
     const current = records.get(documentId);
     if (!current) {
       return null;
@@ -54,11 +59,11 @@ export class InMemoryDocumentStore implements DocumentStore {
     return next;
   }
 
-  delete(documentId: string): void {
+  async delete(documentId: string): Promise<void> {
     records.delete(documentId);
   }
 
-  purgeExpired(now = new Date()): void {
+  async purgeExpired(now = new Date()): Promise<void> {
     for (const [id, record] of records) {
       if (isExpired(record, now)) {
         records.delete(id);
@@ -67,8 +72,8 @@ export class InMemoryDocumentStore implements DocumentStore {
   }
 }
 
-/** Process-local guest store. Demo fixtures are not stored here. */
-export const documentStore: DocumentStore = new InMemoryDocumentStore();
+/** Process-local guest store (local-dev fallback). Demo fixtures are not stored here. */
+export const inMemoryDocumentStore: DocumentStore = new InMemoryDocumentStore();
 
 /** Test helper only — not for API routes. */
 export function resetDocumentStoreForTests(): void {

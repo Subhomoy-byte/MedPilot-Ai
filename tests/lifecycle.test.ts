@@ -10,8 +10,8 @@ describe("document lifecycle", () => {
     resetDocumentStoreForTests();
   });
 
-  it("creates guest documents as uploaded with a 60-minute expiry", () => {
-    const created = documentStore.create({
+  it("creates guest documents as uploaded with a 60-minute expiry", async () => {
+    const created = await documentStore.create({
       filename: "scan.jpg",
       mimeType: "image/jpeg",
       sizeBytes: 12,
@@ -28,7 +28,7 @@ describe("document lifecycle", () => {
     expect(isExpired(created, new Date(Date.parse(created.expiresAt)))).toBe(true);
   });
 
-  it("returns DOCUMENT_EXPIRED for expired guest ids", () => {
+  it("returns DOCUMENT_EXPIRED for expired guest ids", async () => {
     seedDocumentForTests({
       documentId: "expired-1",
       status: "uploaded",
@@ -44,16 +44,16 @@ describe("document lifecycle", () => {
       ocrConfidence: null,
       lastAnalysis: null,
     });
-    expect(resolveDocument("expired-1")).toEqual({ error: "DOCUMENT_EXPIRED" });
-    expect(documentStore.get("expired-1")).toBeNull();
+    expect(await resolveDocument("expired-1")).toEqual({ error: "DOCUMENT_EXPIRED" });
+    expect(await documentStore.get("expired-1")).toBeNull();
   });
 
-  it("returns DOCUMENT_NOT_FOUND for unknown ids", () => {
-    expect(resolveDocument("missing-id")).toEqual({ error: "DOCUMENT_NOT_FOUND" });
+  it("returns DOCUMENT_NOT_FOUND for unknown ids", async () => {
+    expect(await resolveDocument("missing-id")).toEqual({ error: "DOCUMENT_NOT_FOUND" });
   });
 
-  it("does not require storage for demo fixtures", () => {
-    expect(resolveDocument("demo-lab-001")).toEqual({
+  it("does not require storage for demo fixtures", async () => {
+    expect(await resolveDocument("demo-lab-001")).toEqual({
       kind: "fixture",
       documentId: "demo-lab-001",
     });

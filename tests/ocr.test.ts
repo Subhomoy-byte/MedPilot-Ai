@@ -49,14 +49,14 @@ describe("OCR engine", () => {
     resetDocumentStoreForTests();
   });
 
-  it("keeps frozen confidence thresholds", () => {
+  it("keeps frozen confidence thresholds", async () => {
     expect(classifyConfidence(0.8)).toBe("high");
     expect(classifyConfidence(0.79)).toBe("medium");
     expect(classifyConfidence(0.49)).toBe("low");
     expect(ocrNeedsReview("low")).toBe(true);
   });
 
-  it("does not rewrite medicine-like tokens during normalization", () => {
+  it("does not rewrite medicine-like tokens during normalization", async () => {
     expect(normalizeOcrText("  Metformin   500 mg \n")).toBe("Metformin 500 mg");
     expect(normalizeOcrText("Rx\nMTF")).toBe("Rx\nMTF");
   });
@@ -166,7 +166,7 @@ describe("OCR engine", () => {
     OCR_TIMEOUT,
   );
 
-  it("does not treat low confidence as a fatal API error when text exists", () => {
+  it("does not treat low confidence as a fatal API error when text exists", async () => {
     expect(ocrNeedsReview("low")).toBe(true);
     expect(hasUsableOcrText("Metformin")).toBe(true);
   });
@@ -185,7 +185,7 @@ describe("OCR engine", () => {
     expect(data.source).toBe("demo_fixture");
     expect(data.confidenceLevel).toBe("low");
     expect(data.needsReview).toBe(true);
-    expect(documentStore.get("demo-discharge-001")).toBeNull();
+    expect(await documentStore.get("demo-discharge-001")).toBeNull();
   });
 
   it("returns DOCUMENT_NOT_FOUND for an unknown id", async () => {

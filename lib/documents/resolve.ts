@@ -8,17 +8,19 @@ export type ResolvedDocument =
   | { kind: "fixture"; documentId: DemoFixtureId }
   | { kind: "stored"; record: DocumentRecord };
 
-export function resolveDocument(documentId: string): ResolvedDocument | { error: ErrorCode } {
+export async function resolveDocument(
+  documentId: string,
+): Promise<ResolvedDocument | { error: ErrorCode }> {
   if (isDemoFixtureId(documentId)) {
     return { kind: "fixture", documentId };
   }
 
-  const record = documentStore.get(documentId);
+  const record = await documentStore.get(documentId);
   if (!record) {
     return { error: "DOCUMENT_NOT_FOUND" };
   }
   if (isExpired(record)) {
-    documentStore.delete(documentId);
+    await documentStore.delete(documentId);
     return { error: "DOCUMENT_EXPIRED" };
   }
   return { kind: "stored", record };
