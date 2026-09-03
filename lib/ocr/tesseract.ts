@@ -1,3 +1,4 @@
+import path from "node:path";
 import { createWorker, type Worker } from "tesseract.js";
 import type { OcrWord } from "@/lib/ocr/types";
 
@@ -14,6 +15,12 @@ async function getWorker(): Promise<Worker> {
         // language data to a non-writable path, fails silently, and
         // retries until the function times out.
         cachePath: "/tmp",
+        // eng.traineddata.gz is bundled in the deployment (see
+        // lib/ocr/tessdata/) so OCR never depends on a network fetch to a
+        // third-party CDN at request time — that fetch was slow/unreliable
+        // enough on Vercel's serverless network to exceed even a 120s
+        // function timeout on a cold start.
+        langPath: path.join(process.cwd(), "lib", "ocr", "tessdata"),
       });
       await worker.setParameters({
         user_defined_dpi: "300",
