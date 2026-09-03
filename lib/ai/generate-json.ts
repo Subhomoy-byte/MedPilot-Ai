@@ -52,6 +52,14 @@ export async function generateJsonFromGemini(prompt: string): Promise<GeminiJson
         throw error;
       }
       lastError = error;
+      const status =
+        typeof error === "object" && error !== null && "status" in error
+          ? (error as { status?: unknown }).status
+          : undefined;
+      console.error(
+        `[gemini] attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} failed, model=${model}, status=${status}:`,
+        error,
+      );
       const retry = isRetryableGeminiError(error) && attempt < GEMINI_MAX_ATTEMPTS;
       if (!retry) {
         if (isRetryableGeminiError(error)) {
