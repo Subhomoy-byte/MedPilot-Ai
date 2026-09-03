@@ -65,6 +65,17 @@ export function parseAndValidateMedPilotAnalysis(rawText: string): MedPilotAnaly
 
   const result = medPilotAnalysisSchema.safeParse(parsed);
   if (!result.success) {
+    // Metadata only (field paths/types) - never the actual field values,
+    // since this payload is derived from the user's uploaded medical document.
+    console.error(
+      "[analyze] schema validation failed:",
+      result.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        code: issue.code,
+        expected: "expected" in issue ? issue.expected : undefined,
+        received: "received" in issue ? issue.received : undefined,
+      })),
+    );
     throw new GeminiInvalidResponseError(reasonFromZod(result.error));
   }
 
