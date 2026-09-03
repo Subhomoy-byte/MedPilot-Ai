@@ -60,14 +60,18 @@ export async function POST(request: Request) {
     }
     await documentStore.update(resolved.record.documentId, { status: "failed" });
     if (error instanceof AnalyzeDocumentError) {
+      console.error(`[analyze] AnalyzeDocumentError code=${error.code}:`, error);
       return apiError(error.code);
     }
     if (error instanceof GeminiInvalidResponseError) {
+      console.error("[analyze] GeminiInvalidResponseError:", error);
       return apiError("AI_INVALID_RESPONSE");
     }
     if (error instanceof GeminiUnavailableError) {
+      console.error("[analyze] GeminiUnavailableError:", error);
       return apiError("AI_UNAVAILABLE", undefined, error.retryable);
     }
+    console.error("[analyze] unexpected error (not a recognized error type):", error);
     return apiError("AI_UNAVAILABLE");
   }
 }
