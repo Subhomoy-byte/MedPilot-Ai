@@ -14,13 +14,18 @@ function isImage(mimeType: string): boolean {
 }
 
 async function pagesFromDocument(input: OcrExtractInput): Promise<Buffer[]> {
+  console.log(`[ocr] pagesFromDocument mimeType=${input.mimeType} bytes=${input.bytes.length}`);
+  const start = Date.now();
+  let result: Buffer[];
   if (isPdf(input.mimeType)) {
-    return rasterizePdfPages(input.bytes);
+    result = await rasterizePdfPages(input.bytes);
+  } else if (isImage(input.mimeType)) {
+    result = [await preprocessImage(input.bytes)];
+  } else {
+    throw new Error("unsupported");
   }
-  if (isImage(input.mimeType)) {
-    return [await preprocessImage(input.bytes)];
-  }
-  throw new Error("unsupported");
+  console.log(`[ocr] pagesFromDocument took ${Date.now() - start}ms, pages=${result.length}`);
+  return result;
 }
 
 export async function extractText(document: OcrExtractInput): Promise<OcrExtractResult> {
@@ -56,6 +61,7 @@ export async function extractText(document: OcrExtractInput): Promise<OcrExtract
       engine: "tesseract.js",
     };
   } catch (error) {
+    console.error("[ocr] extractText failed:", error);
     const message = error instanceof Error ? error.message : "";
     if (message === "unsupported") {
       return { ok: false, reason: "unsupported" };
