@@ -4,7 +4,10 @@ import { getGeminiClient } from "@/lib/ai/client";
 import { GeminiUnavailableError, isRetryableGeminiError } from "@/lib/ai/errors";
 import { GeminiInvalidResponseError } from "@/lib/ai/validate-analysis";
 
-export const GEMINI_TIMEOUT_MS = 30_000;
+// gemini-3.6-flash observed to take longer than the previous model on
+// document-analysis prompts; 30s was causing spurious AbortErrors in
+// production even on requests that would have succeeded given more time.
+export const GEMINI_TIMEOUT_MS = 60_000;
 export const GEMINI_MAX_ATTEMPTS = 3;
 
 export type GeminiJsonResult = {

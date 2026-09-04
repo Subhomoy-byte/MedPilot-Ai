@@ -11,6 +11,10 @@ import { analyzeRequestSchema, medPilotAnalysisSchema } from "@/lib/validation/s
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Up to GEMINI_MAX_ATTEMPTS (3) retries at GEMINI_TIMEOUT_MS (60s) each is a
+// 180s worst case; give this function enough headroom to actually use that
+// budget instead of Vercel killing it first.
+export const maxDuration = 200;
 
 export async function POST(request: Request) {
   let json: unknown;
